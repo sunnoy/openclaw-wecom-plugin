@@ -1,5 +1,5 @@
 {
-    "name": "openclaw-plugin-wxwork",
+    "name": "openclaw-plugin-wecom",
     "version": "0.2.1",
     "description": "Enterprise WeChat AI Bot channel plugin for OpenClaw",
     "type": "module",
@@ -30,7 +30,7 @@
             "id": "wxwork",
             "label": "Enterprise WeChat",
             "selectionLabel": "Enterprise WeChat (AI Bot)",
-            "docsPath": "https://github.com/sunnoy/openclaw-wecom-plugin",
+            "docsPath": "https://github.com/sunnoy/openclaw-plugin-wecom",
             "blurb": "Support for Enterprise WeChat (WeCom) AI Bot integration",
             "aliases": [
                 "wecom",
@@ -39,7 +39,7 @@
         },
         "install": {
             "defaultChoice": "npm",
-            "npmSpec": "openclaw-plugin-wxwork"
+            "npmSpec": "openclaw-plugin-wecom"
         }
     },
     "keywords": [
