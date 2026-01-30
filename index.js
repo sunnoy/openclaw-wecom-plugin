@@ -807,10 +807,10 @@ async function deliverWxWorkReply({ payload, account, responseUrl, senderId, str
 // =============================================================================
 
 const plugin = {
-  id: "wxwork",
+  id: "openclaw-plugin-wecom",
   name: "Enterprise WeChat",
   description: "Enterprise WeChat AI Bot channel plugin for OpenClaw",
-  configSchema: { type: "object", additionalProperties: true, properties: {} },
+  configSchema: { type: "object", additionalProperties: false, properties: {} },
   register(api) {
     logger.info("WxWork plugin registering...");
 

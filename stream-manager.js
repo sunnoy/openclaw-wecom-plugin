@@ -8,9 +8,23 @@ class StreamManager {
     constructor() {
         // streamId -> { content: string, finished: boolean, updatedAt: number, feedbackId: string|null, msgItem: Array }
         this.streams = new Map();
+        this._cleanupInterval = null;
+    }
 
-        // 自动清理过期的流 (10分钟未更新)
-        setInterval(() => this.cleanup(), 60 * 1000);
+    /**
+     * 启动定时清理（避免在 import 时产生常驻 side-effect）
+     */
+    startCleanup() {
+        if (this._cleanupInterval) return;
+        this._cleanupInterval = setInterval(() => this.cleanup(), 60 * 1000);
+        // 不阻止进程退出（例如 npm pack / import smoke test）
+        this._cleanupInterval.unref?.();
+    }
+
+    stopCleanup() {
+        if (!this._cleanupInterval) return;
+        clearInterval(this._cleanupInterval);
+        this._cleanupInterval = null;
     }
 
     /**
@@ -20,6 +34,7 @@ class StreamManager {
      * @param {string} options.feedbackId - 反馈追踪ID (最长256字节)
      */
     createStream(streamId, options = {}) {
+        this.startCleanup();
         logger.debug("Creating stream", { streamId, feedbackId: options.feedbackId });
         this.streams.set(streamId, {
             content: "",
@@ -40,6 +55,7 @@ class StreamManager {
      * @param {Array} options.msgItem - 图文混排列表 (仅finish=true时有效)
      */
     updateStream(streamId, content, finished = false, options = {}) {
+        this.startCleanup();
         const stream = this.streams.get(streamId);
         if (!stream) {
             logger.warn("Stream not found for update", { streamId });
@@ -81,6 +97,7 @@ class StreamManager {
      * 追加内容到流 (用于流式生成)
      */
     appendStream(streamId, chunk) {
+        this.startCleanup();
         const stream = this.streams.get(streamId);
         if (!stream) {
             logger.warn("Stream not found for append", { streamId });
@@ -103,6 +120,7 @@ class StreamManager {
      * 标记流为完成状态
      */
     finishStream(streamId) {
+        this.startCleanup();
         const stream = this.streams.get(streamId);
         if (!stream) {
             logger.warn("Stream not found for finish", { streamId });

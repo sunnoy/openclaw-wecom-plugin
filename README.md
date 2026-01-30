@@ -61,6 +61,12 @@ If you prefer all WeCom messages to use OpenClaw’s **default Agent**, disable 
 Run the following in your OpenClaw project directory:
 
 ```bash
+openclaw plugins install openclaw-plugin-wecom
+```
+
+Alternatively (if you're managing plugins via `package.json` yourself):
+
+```bash
 npm install openclaw-plugin-wecom
 ```
 
@@ -70,6 +76,11 @@ Add the plugin configuration to your OpenClaw configuration file (e.g., `config.
 
 ```json
 {
+  "plugins": {
+    "entries": {
+      "openclaw-plugin-wecom": { "enabled": true }
+    }
+  },
   "channels": {
     "wxwork": {
       "enabled": true,

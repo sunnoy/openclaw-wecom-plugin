@@ -125,15 +125,3 @@ export async function sendTemplateCardReply(responseUrl, card) {
         template_card: card,
     });
 }
-
-// 兼容旧代码 - 保留 WxWorkClient 类名但简化实现
-export class WxWorkClient {
-    constructor(config) {
-        logger.warn("WxWorkClient is deprecated for AI Bot, use sendReplyMessage directly");
-    }
-
-    // 保留兼容方法
-    async sendStreamResponse(responseUrl, message) {
-        return sendReplyMessage(responseUrl, message);
-    }
-}

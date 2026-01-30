@@ -61,6 +61,12 @@ OpenClaw 会通过解析 `SessionKey` 来决定本次消息由哪个 Agent 处�
 在你的 OpenClaw 项目目录中运行：
 
 ```bash
+openclaw plugins install openclaw-plugin-wecom
+```
+
+或者（如果你习惯自己在 `package.json` 中管理依赖）：
+
+```bash
 npm install openclaw-plugin-wecom
 ```
 
@@ -70,6 +76,11 @@ npm install openclaw-plugin-wecom
 
 ```json
 {
+  "plugins": {
+    "entries": {
+      "openclaw-plugin-wecom": { "enabled": true }
+    }
+  },
   "channels": {
     "wxwork": {
       "enabled": true,

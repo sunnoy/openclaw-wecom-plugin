@@ -1,0 +1,11 @@
+{
+  "id": "openclaw-plugin-wecom",
+  "name": "OpenClaw WeCom (WxWork)",
+  "description": "Enterprise WeChat (WeCom/WxWork) messaging channel plugin for OpenClaw",
+  "channels": ["wxwork"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

@@ -118,36 +118,3 @@ export function extractGroupMessageContent(content, config) {
 
     return cleanContent.trim();
 }
-
-// ============ 兼容性导出 ============
-
-/**
- * @deprecated 不再需要，OpenClaw 会自动创建
- */
-export async function createDynamicAgent({ chatType, peerId, config }) {
-    const agentId = generateAgentId(chatType, peerId);
-    logger.debug("createDynamicAgent called (no-op, OpenClaw handles creation)", { agentId });
-    return { success: true, agentId, error: null };
-}
-
-/**
- * @deprecated 不再需要
- */
-export function ensureDynamicAgent({ chatType, peerId, config }) {
-    const agentId = generateAgentId(chatType, peerId);
-    return { success: true, agentId, isNew: false };
-}
-
-/**
- * @deprecated 不再需要，OpenClaw 自动处理
- */
-export function agentExists(config, agentId) {
-    return true; // 总是返回 true，让 OpenClaw 处理
-}
-
-/**
- * @deprecated 不再需要
- */
-export function clearAgentCache(agentId) {
-    // no-op
-}

@@ -1,13 +1,12 @@
 {
     "name": "openclaw-plugin-wecom",
-    "version": "0.2.4",
+    "version": "0.3.0",
     "description": "Enterprise WeChat AI Bot channel plugin for OpenClaw",
     "type": "module",
     "main": "index.js",
     "files": [
         "index.js",
         "client.js",
-        "config.js",
         "crypto.js",
         "dynamic-agent.js",
         "logger.js",
@@ -16,9 +15,9 @@
         "LICENSE",
         "CONTRIBUTING.md",
         "stream-manager.js",
-        "types.js",
         "utils.js",
-        "webhook.js"
+        "webhook.js",
+        "openclaw.plugin.json"
     ],
     "dependencies": {
         "fast-xml-parser": "^4.2.0"
@@ -31,8 +30,10 @@
             "id": "wxwork",
             "label": "Enterprise WeChat",
             "selectionLabel": "Enterprise WeChat (AI Bot)",
-            "docsPath": "https://github.com/sunnoy/openclaw-plugin-wecom",
+            "docsPath": "/channels/wxwork",
+            "docsLabel": "wxwork",
             "blurb": "Support for Enterprise WeChat (WeCom) AI Bot integration",
+            "order": 90,
             "aliases": [
                 "wecom",
                 "wework"
