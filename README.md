@@ -1,78 +1,83 @@
-# OpenClaw WeCom AI Bot Plugin
+# OpenClaw WeCom (Enterprise WeChat) AI Bot Plugin
 
 [简体中文](https://github.com/sunnoy/openclaw-plugin-wecom/blob/main/README_ZH.md) | [English](https://github.com/sunnoy/openclaw-plugin-wecom/blob/main/README.md)
 
-`openclaw-plugin-wecom` is an enterprise WeChat (WeCom) integration plugin specifically developed for the [OpenClaw](https://github.com/sunnoy/openclaw-plugin-wecom) framework. It allows you to seamlessly integrate powerful AI capabilities into WeCom with support for multiple advanced features.
+`openclaw-plugin-wecom` is a WeCom (Enterprise WeChat) integration plugin developed for the [OpenClaw](https://github.com/openclaw/openclaw) framework. It enables seamless integration of powerful AI capabilities into WeCom with advanced features.
 
 ## ✨ Key Features
 
-- 🌊 **Streaming Output**: Based on the latest WeCom AI Bot streaming mechanism for a smooth typing-like response experience.
-- 🤖 **Dynamic Agent Management**: Automatically creates an independent Agent per DM user and per group chat. Each Agent has its own workspace and conversation history, keeping data isolated by default.
-- 👥 **Deep Group Chat Integration**: Supports group message parsing and precise triggering via @mentions.
-- 🛠️ **Enhanced Commands**: Built-in support for common commands (e.g., `/new` for a new session, `/status` to check status) with command allowlist configuration.
-- 🔒 **Security & Authentication**: Full support for WeCom message encryption/decryption, URL verification, and sender identity validation.
-- ⚡ **High-Performance Async Processing**: Uses an asynchronous message processing architecture to ensure high responsiveness of the WeCom gateway even during long-running AI inference.
-
-## 🤖 Dynamic Agent Routing (How it works)
-
-OpenClaw decides which Agent to run by parsing `SessionKey`. This plugin uses that mechanism to provide per-user / per-group isolation:
-
-1. When a WeCom message arrives, the plugin generates a deterministic `agentId`:
-   - DM: `wxwork-dm-<userId>`
-   - Group: `wxwork-group-<chatId>`
-2. The plugin routes the message by setting `SessionKey` to:
-   - `agent:<agentId>:<peerKind>:<peerId>`
-3. OpenClaw extracts `<agentId>` from `SessionKey` and will automatically create / reuse the Agent workspace (typically under `~/.openclaw/workspace-<agentId>` for non-default agents).
-
-### Multi-tenant by design
-
-Dynamic agents act like lightweight “tenants”:
-
-- **Per-user / per-group isolation**: each DM user or group chat maps to a dedicated Agent with its own workspace and session store keys.
-- **No extra infra**: no database or tenant registry needed — routing is derived deterministically from the inbound identity.
-
-### Dynamic agent config (local config keys)
-
-All keys live under `channels.wxwork`:
-
-- `dynamicAgents.enabled` (boolean, default: `true`): enable/disable per-user/per-group agents.
-- `dm.createAgentOnFirstMessage` (boolean, default: `true`): whether DMs should use dynamic agents.
-- `groupChat.enabled` (boolean, default: `true`): enable group chat handling.
-- `groupChat.createAgentOnFirstMessage` (boolean, default: `true`): whether group chats should use dynamic agents.
-- `groupChat.requireMention` (boolean, default: `true`): require an @mention to respond in groups.
-- `groupChat.mentionPatterns` (string[], default: `["@"]`): patterns treated as “mention”.
-
-If you prefer all WeCom messages to use OpenClaw’s **default Agent**, disable dynamic agents:
-
-```json
-{
-  "channels": {
-    "wxwork": {
-      "dynamicAgents": { "enabled": false }
-    }
-  }
-}
-```
+- 🌊 **Streaming Output**: Smooth typewriter-style responses using WeCom's latest AI bot streaming mechanism.
+- 🤖 **Dynamic Agent Management**: Automatically creates independent Agents per user/group chat with isolated workspaces and conversation contexts.
+- 👥 **Group Chat Integration**: Full support for group messages with @mention triggering.
+- 🛠️ **Command Support**: Built-in commands (`/new`, `/status`, `/help`, `/compact`) with configurable whitelist.
+- 🔒 **Security**: Complete support for WeCom message encryption/decryption and sender verification.
+- ⚡ **Async Processing**: High-performance async architecture ensures gateway responsiveness during AI inference.
 
 ## 🚀 Quick Start
 
-### 1. Install Plugin
+### Option 1: Docker Deployment (Recommended)
 
-Run the following in your OpenClaw project directory:
+This repository provides a complete Docker deployment solution with automated plugin installation.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/sunnoy/openclaw-plugin-wecom.git
+cd openclaw-plugin-wecom/deploy
+
+# 2. Copy environment configuration
+cp .env.example .env
+
+# 3. Edit .env file with your settings
+vim .env
+
+# 4. Run deployment script
+./deploy.sh
+```
+
+The deployment script automatically:
+- Creates data directories and sets permissions
+- Generates configuration files
+- Starts Docker containers
+- Installs the WeCom plugin
+- Configures and restarts services
+
+#### 🌟 Deployment Highlights
+
+**Custom Data Directory & Agent Workspace Paths**
+
+The core advantage of this deployment is unified data storage in a custom path, effectively utilizing data disks:
+
+```bash
+# .env configuration example
+OPENCLAW_DATA_DIR=/data/openclaw    # Custom data directory
+```
+
+- **OpenClaw State Directory**: `/data/openclaw/`
+- **Dynamic Agent Workspace**: `/data/openclaw/.openclaw/` 
+- **Plugin Directory**: `/data/openclaw/extensions/`
+- **Canvas Data**: `/data/openclaw/canvas/`
+
+Benefits:
+- ✅ All Agent workspace data stored on data disk, avoiding system disk usage
+- ✅ Independent Agent files for each user/group managed under unified path
+- ✅ Easy backup, migration, and expansion
+- ✅ Enterprise-ready deployment with independently mountable data disks
+
+### Option 2: Manual Plugin Installation
+
+Install in an existing OpenClaw environment:
 
 ```bash
 openclaw plugins install openclaw-plugin-wecom
 ```
 
-Alternatively (if you're managing plugins via `package.json` yourself):
+Or via npm:
 
 ```bash
 npm install openclaw-plugin-wecom
 ```
 
-### 2. Configure Plugin
-
-Add the plugin configuration to your OpenClaw configuration file (e.g., `config.json`):
+Then add to your OpenClaw configuration:
 
 ```json
 {
@@ -84,52 +89,114 @@ Add the plugin configuration to your OpenClaw configuration file (e.g., `config.
   "channels": {
     "wxwork": {
       "enabled": true,
-      "token": "YOUR_TOKEN",
-      "encodingAesKey": "YOUR_ENCODING_AES_KEY",
-      "webhookPath": "/webhooks/wxwork",
-      "accounts": {
-        "default": {
-          "allowFrom": ["*"]
-        }
-      },
+      "token": "Your Token",
+      "encodingAesKey": "Your EncodingAESKey"
+    }
+  }
+}
+```
+
+### WeCom Backend Setup
+
+1. Create an "Intelligent Bot" in WeCom Admin Console.
+2. Set the "Receive Message" URL to your service address (e.g., `https://your-domain.com/webhooks/wxwork`).
+3. Enter the corresponding Token and EncodingAESKey.
+
+## 📂 Project Structure
+
+```
+openclaw-plugin-wecom/
+├── deploy/                      # Deployment files
+│   ├── deploy.sh               # One-click deployment script
+│   ├── docker-compose.yml      # Docker Compose configuration
+│   ├── .env.example            # Environment variables template
+│   ├── openclaw.json.base      # Base configuration template
+│   └── openclaw.json.template  # Full configuration template
+├── Dockerfile                   # OpenClaw image build file
+├── local.sh                     # Local image build script
+├── index.js                     # Plugin entry point
+├── webhook.js                   # WeCom HTTP communication
+├── dynamic-agent.js             # Dynamic Agent routing
+├── stream-manager.js            # Streaming response management
+├── crypto.js                    # WeCom encryption
+└── client.js                    # Client logic
+```
+
+## 🤖 Dynamic Agent Routing
+
+The plugin implements per-user/per-group isolation:
+
+1. On message arrival, generates a deterministic `agentId`:
+   - DM: `wxwork-dm-<userId>`
+   - Group: `wxwork-group-<chatId>`
+2. OpenClaw automatically creates/reuses the corresponding Agent workspace.
+
+### Configuration Options
+
+Under `channels.wxwork`:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `dynamicAgents.enabled` | boolean | `true` | Enable dynamic Agents |
+| `dm.createAgentOnFirstMessage` | boolean | `true` | Use dynamic Agent for DMs |
+| `groupChat.enabled` | boolean | `true` | Enable group chat handling |
+| `groupChat.requireMention` | boolean | `true` | Require @mention in groups |
+
+To route all messages to the default Agent:
+
+```json
+{
+  "channels": {
+    "wxwork": {
+      "dynamicAgents": { "enabled": false }
+    }
+  }
+}
+```
+
+## 🛠️ Command Whitelist
+
+To prevent regular users from executing sensitive Gateway management commands via WeCom messages, this plugin supports a **command whitelist** mechanism. Only commands in the whitelist will be executed; others are ignored.
+
+> 💡 **Note**: This configuration is already included in `deploy/openclaw.json.template` and takes effect automatically upon deployment.
+
+```json
+{
+  "channels": {
+    "wxwork": {
       "commands": {
         "enabled": true,
         "allowlist": ["/new", "/status", "/help", "/compact"]
-      },
-      "dynamicAgents": {
-        "enabled": true
       }
     }
   }
 }
 ```
 
-### 3. WeCom Admin Portal Setup
+| Command | Description | Security Level |
+|---------|-------------|----------------|
+| `/new` | Reset conversation, start fresh | ✅ User-level |
+| `/compact` | Compress conversation context | ✅ User-level |
+| `/help` | Show help information | ✅ User-level |
+| `/status` | Show Agent status | ✅ User-level |
 
-1. Create an "AI Bot" in the WeCom management backend.
-2. Set the "Message Receiving Configuration" URL to your service address (e.g., `https://your-domain.com/webhooks/wxwork`).
-3. Fill in the corresponding Token and EncodingAESKey.
+> ⚠️ **Security Note**: Do not add `/gateway`, `/plugins`, or other management commands to the whitelist to prevent regular users from gaining Gateway instance admin privileges.
 
-## 🛠️ Command Support
+## 🏗️ Building Custom Images
 
-The plugin has built-in handling for the following commands:
+To build a custom OpenClaw image:
 
-- `/new`: Reset current conversation and start a new session.
-- `/compact`: Compact session context, keeping key summaries to save tokens.
-- `/help`: View help information.
-- `/status`: View current Agent and plugin status.
+```bash
+# Build image (uses China npm mirror)
+./local.sh v2026.1.29
 
-## 📂 Project Structure
-
-- `index.js`: Plugin entry point, handling all core routing and lifecycle management.
-- `webhook.js`: Handles WeCom HTTP communication, encryption/decryption, and message parsing.
-- `dynamic-agent.js`: Dynamic Agent allocation logic.
-- `stream-manager.js`: Manages the state and data partitioning of streaming responses.
-- `crypto.js`: Implementation of WeCom encryption algorithms.
+# Build and push image
+./local.sh v2026.1.29 push
+```
 
 ## 🤝 Contributing
 
-We welcome contributions! If you find a bug or have suggestions for new features, please submit an Issue or Pull Request.
+We welcome contributions! Please submit Issues or Pull Requests for bugs or feature suggestions.
 
 ## 📄 License
 

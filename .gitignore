@@ -18,3 +18,4 @@ pnpm-debug.log*
 *.swp
 *.swo
 local.md
+local.sh
