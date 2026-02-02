@@ -19,3 +19,4 @@ pnpm-debug.log*
 *.swo
 local.md
 local.sh
+test.sh
