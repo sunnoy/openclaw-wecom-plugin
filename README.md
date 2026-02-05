@@ -23,7 +23,7 @@
 ## 🚀 Installation
 
 ```bash
-openclaw plugins install openclaw-plugin-wecom
+openclaw plugins install @sunnoy/wecom
 ```
 
 This command will automatically:
