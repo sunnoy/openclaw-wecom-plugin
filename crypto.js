@@ -1,5 +1,4 @@
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
-import { XMLParser, XMLBuilder } from "fast-xml-parser";
 import { CONSTANTS } from "./utils.js";
 import { logger } from "./logger.js";
 
@@ -96,13 +95,3 @@ export class WecomCrypto {
         return buff.subarray(0, buff.length - pad);
     }
 }
-
-export const xmlParser = new XMLParser({
-    ignoreAttributes: true,
-    parseTagValue: false
-});
-
-export const xmlBuilder = new XMLBuilder({
-    format: false,
-    ignoreAttributes: true
-});
