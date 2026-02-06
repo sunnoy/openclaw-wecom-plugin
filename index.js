@@ -80,6 +80,8 @@ function checkCommandAllowlist(message, config) {
 // Runtime state (module-level singleton)
 let _runtime = null;
 let _openclawConfig = null;
+const ensuredDynamicAgentIds = new Set();
+let ensureDynamicAgentWriteQueue = Promise.resolve();
 
 /**
  * Set the plugin runtime (called during plugin registration)
@@ -93,6 +95,82 @@ function getRuntime() {
     throw new Error("[wecom] Runtime not initialized");
   }
   return _runtime;
+}
+
+function upsertAgentIdOnlyEntry(cfg, agentId) {
+  const normalizedId = String(agentId || "").trim().toLowerCase();
+  if (!normalizedId) return false;
+
+  if (!cfg.agents || typeof cfg.agents !== "object") {
+    cfg.agents = {};
+  }
+
+  const currentList = Array.isArray(cfg.agents.list) ? cfg.agents.list : [];
+  const existingIds = new Set(
+    currentList
+      .map((entry) => (entry && typeof entry.id === "string" ? entry.id.trim().toLowerCase() : ""))
+      .filter(Boolean),
+  );
+
+  let changed = false;
+  const nextList = [...currentList];
+
+  // Keep "main" as the explicit default when creating agents.list for the first time.
+  if (nextList.length === 0) {
+    nextList.push({ id: "main" });
+    existingIds.add("main");
+    changed = true;
+  }
+
+  if (!existingIds.has(normalizedId)) {
+    nextList.push({ id: normalizedId });
+    changed = true;
+  }
+
+  if (changed) {
+    cfg.agents.list = nextList;
+  }
+
+  return changed;
+}
+
+async function ensureDynamicAgentListed(agentId) {
+  const normalizedId = String(agentId || "").trim().toLowerCase();
+  if (!normalizedId) return;
+  if (ensuredDynamicAgentIds.has(normalizedId)) return;
+
+  const runtime = getRuntime();
+  const configRuntime = runtime?.config;
+  if (!configRuntime?.loadConfig || !configRuntime?.writeConfigFile) return;
+
+  ensureDynamicAgentWriteQueue = ensureDynamicAgentWriteQueue
+    .then(async () => {
+      if (ensuredDynamicAgentIds.has(normalizedId)) return;
+
+      const latestConfig = configRuntime.loadConfig();
+      if (!latestConfig || typeof latestConfig !== "object") return;
+
+      const changed = upsertAgentIdOnlyEntry(latestConfig, normalizedId);
+      if (changed) {
+        await configRuntime.writeConfigFile(latestConfig);
+        logger.info("WeCom: dynamic agent added to agents.list", { agentId: normalizedId });
+      }
+
+      // Keep runtime in-memory config aligned to avoid stale reads in this process.
+      if (_openclawConfig && typeof _openclawConfig === "object") {
+        upsertAgentIdOnlyEntry(_openclawConfig, normalizedId);
+      }
+
+      ensuredDynamicAgentIds.add(normalizedId);
+    })
+    .catch((err) => {
+      logger.warn("WeCom: failed to sync dynamic agent into agents.list", {
+        agentId: normalizedId,
+        error: err?.message || String(err),
+      });
+    });
+
+  await ensureDynamicAgentWriteQueue;
 }
 
 // Webhook targets registry (similar to Google Chat)
@@ -189,6 +267,102 @@ const wecomChannelPlugin = {
     blockStreaming: true, // WeCom AI Bot uses stream response format
   },
   reload: { configPrefixes: ["channels.wecom"] },
+  configSchema: {
+    schema: {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable WeCom channel",
+          "default": true
+        },
+        "token": {
+          "type": "string",
+          "description": "WeCom bot token from admin console"
+        },
+        "encodingAesKey": {
+          "type": "string",
+          "description": "WeCom message encryption key (43 characters)",
+          "minLength": 43,
+          "maxLength": 43
+        },
+        "commands": {
+          "type": "object",
+          "description": "Command whitelist configuration",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable command whitelist filtering",
+              "default": true
+            },
+            "allowlist": {
+              "type": "array",
+              "description": "Allowed commands (e.g., /new, /status, /help)",
+              "items": {
+                "type": "string"
+              },
+              "default": ["/new", "/status", "/help", "/compact"]
+            }
+          }
+        },
+        "dynamicAgents": {
+          "type": "object",
+          "description": "Dynamic agent routing configuration",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable per-user/per-group agent isolation",
+              "default": true
+            }
+          }
+        },
+        "dm": {
+          "type": "object",
+          "description": "Direct message (private chat) configuration",
+          "additionalProperties": false,
+          "properties": {
+            "createAgentOnFirstMessage": {
+              "type": "boolean",
+              "description": "Create separate agent for each user",
+              "default": true
+            }
+          }
+        },
+        "groupChat": {
+          "type": "object",
+          "description": "Group chat configuration",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable group chat support",
+              "default": true
+            },
+            "requireMention": {
+              "type": "boolean",
+              "description": "Only respond when @mentioned in groups",
+              "default": true
+            }
+          }
+        }
+      }
+    },
+    uiHints: {
+      "token": {
+        "sensitive": true,
+        "label": "Bot Token"
+      },
+      "encodingAesKey": {
+        "sensitive": true,
+        "label": "Encoding AES Key",
+        "help": "43-character encryption key from WeCom admin console"
+      }
+    }
+  },
   config: {
     listAccountIds: (cfg) => {
       const wecom = cfg?.channels?.wecom;
@@ -674,6 +848,7 @@ async function processInboundMessage({ message, streamId, timestamp, nonce, acco
   const targetAgentId = dynamicConfig.enabled ? generateAgentId(peerKind, peerId) : null;
 
   if (targetAgentId) {
+    await ensureDynamicAgentListed(targetAgentId);
     logger.debug("Using dynamic agent", { agentId: targetAgentId, chatType: peerKind, peerId });
   }
 

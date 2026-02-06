@@ -6,86 +6,8 @@
     "wecom"
   ],
   "configSchema": {
-    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "additionalProperties": false,
-    "properties": {
-      "enabled": {
-        "type": "boolean",
-        "description": "Enable WeCom channel",
-        "default": true
-      },
-      "token": {
-        "type": "string",
-        "description": "WeCom bot token from admin console"
-      },
-      "encodingAesKey": {
-        "type": "string",
-        "description": "WeCom message encryption key (43 characters)",
-        "minLength": 43,
-        "maxLength": 43
-      },
-      "commands": {
-        "type": "object",
-        "description": "Command whitelist configuration",
-        "additionalProperties": false,
-        "properties": {
-          "enabled": {
-            "type": "boolean",
-            "description": "Enable command whitelist filtering",
-            "default": true
-          },
-          "allowlist": {
-            "type": "array",
-            "description": "Allowed commands (e.g., /new, /status, /help)",
-            "items": {
-              "type": "string"
-            },
-            "default": ["/new", "/status", "/help", "/compact"]
-          }
-        }
-      },
-      "dynamicAgents": {
-        "type": "object",
-        "description": "Dynamic agent routing configuration",
-        "additionalProperties": false,
-        "properties": {
-          "enabled": {
-            "type": "boolean",
-            "description": "Enable per-user/per-group agent isolation",
-            "default": true
-          }
-        }
-      },
-      "dm": {
-        "type": "object",
-        "description": "Direct message (private chat) configuration",
-        "additionalProperties": false,
-        "properties": {
-          "createAgentOnFirstMessage": {
-            "type": "boolean",
-            "description": "Create separate agent for each user",
-            "default": true
-          }
-        }
-      },
-      "groupChat": {
-        "type": "object",
-        "description": "Group chat configuration",
-        "additionalProperties": false,
-        "properties": {
-          "enabled": {
-            "type": "boolean",
-            "description": "Enable group chat support",
-            "default": true
-          },
-          "requireMention": {
-            "type": "boolean",
-            "description": "Only respond when @mentioned in groups",
-            "default": true
-          }
-        }
-      }
-    }
+    "properties": {}
   }
 }
